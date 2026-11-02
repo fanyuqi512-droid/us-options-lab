@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="美股期权分析实验室：Black–Scholes 公允价、隐含波动率、Greeks 与 IV Smile（教育用途）" />
+  <title>美股期权实验室 · US Options Lab</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+  <script src="js/bs.js" defer></script>
+  <script src="js/data.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">σ</div>
+        <div>
+          <h1>美股期权实验室 <span style="color:var(--muted);font-weight:500">US Options Lab</span></h1>
+          <p>Black–Scholes · IV · Greeks · 教育用途</p>
+        </div>
+      </div>
+      <span id="dataBadge" class="badge demo">● 演示数据 Demo</span>
+    </header>
+
+    <div class="disclaimer">
+      <strong>免责声明 / Disclaimer：</strong>
+      本工具仅供学习与模型演示，基于 Black–Scholes–Merton 等简化假设，不构成投资、交易或财务建议。期权有亏损全部本金的风险。数据可能延迟或不完整。
+    </div>
+
+    <div id="statusBanner" class="banner"></div>
+
+    <section class="card">
+      <h2>标的与参数 <span class="sub">Ticker &amp; Model Inputs</span></h2>
+      <div class="controls">
+        <div class="field">
+          <label>代码 Ticker</label>
+          <input id="tickerInput" class="ticker-input" value="AAPL" maxlength="10" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>到期日 Expiry</label>
+          <select id="expirySelect"></select>
+        </div>
+        <div class="field">
+          <label>无风险利率 r %</label>
+          <input id="rateInput" type="number" step="0.05" value="4.5" />
+        </div>
+        <div class="field">
+          <label>股息率 q %</label>
+          <input id="divInput" type="number" step="0.05" value="0" />
+        </div>
+        <div class="field">
+          <label>备用 HV %</label>
+          <input id="hvInput" type="number" step="0.5" value="28" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn" id="btnLoad" type="button">加载期权链</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn secondary" id="btnDemo" type="button">演示模式</button>
+        </div>
+      </div>
+      <div class="params" style="align-items:center">
+        <label style="font-size:0.85rem;color:var(--muted);display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="chkUseIV" checked /> 用市场 Mid 反推 IV 定价（否则用 HV）
+        </label>
+        <label style="font-size:0.85rem;color:var(--muted);display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="chkDemo" /> 强制演示数据（跳过 Yahoo）
+        </label>
+      </div>
+      <div class="spot-row">
+        <div>
+          <div class="meta" id="spotName">—</div>
+          <div class="spot-price" id="spotPrice">—</div>
+        </div>
+        <div class="spot-chg" id="spotChg"></div>
+        <div class="meta" id="spotMeta"></div>
+      </div>
+    </section>
+
+    <div class="grid" style="margin-top:14px">
+      <section class="card">
+        <h2>
+          期权链 Option Chain
+          <span class="tabs">
+            <button type="button" class="side-tab active" data-side="call">Calls</button>
+            <button type="button" class="side-tab" data-side="put">Puts</button>
+            <button type="button" class="side-tab" data-side="both">Both</button>
+          </span>
+        </h2>
+        <div class="table-wrap">
+          <table class="chain">
+            <thead>
+              <tr>
+                <th>类型</th>
+                <th>Strike</th>
+                <th>Bid</th>
+                <th>Ask</th>
+                <th>Mid</th>
+                <th>BS Fair</th>
+                <th>偏离%</th>
+                <th>IV</th>
+                <th>Vol</th>
+                <th>OI</th>
+              </tr>
+            </thead>
+            <tbody id="chainBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <section class="card">
+          <h2>合约细节 &amp; Greeks <span class="sub">选中行</span></h2>
+          <div id="greeksPanel"><p class="meta">加载后选择合约</p></div>
+        </section>
+        <section class="card">
+          <h2>预期波动 Expected Move <span class="sub">ATM ±1σ</span></h2>
+          <div id="expectedMove"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="panels">
+      <section class="card">
+        <h2>IV Smile</h2>
+        <div class="chart-box"><canvas id="smileChart"></canvas></div>
+      </section>
+      <section class="card">
+        <h2>到期盈亏示意 Payoff</h2>
+        <div class="chart-box"><canvas id="payoffChart"></canvas></div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:14px">
+      <h2>手动计算器 Manual BS Calculator <span class="sub">无行情时仍可用</span></h2>
+      <div class="manual-grid">
+        <div class="field"><label>S 现价</label><input id="mS" type="number" step="0.01" value="100" /></div>
+        <div class="field"><label>K 行权价</label><input id="mK" type="number" step="0.01" value="100" /></div>
+        <div class="field"><label>T 天数</label><input id="mT" type="number" step="1" value="30" /></div>
+        <div class="field"><label>r %</label><input id="mR" type="number" step="0.05" value="4.5" /></div>
+        <div class="field"><label>q %</label><input id="mQ" type="number" step="0.05" value="0" /></div>
+        <div class="field"><label>σ %</label><input id="mVol" type="number" step="0.5" value="25" /></div>
+        <div class="field">
+          <label>类型</label>
+          <select id="mType"><option value="call">Call</option><option value="put">Put</option></select>
+        </div>
+        <div class="field"><label>&nbsp;</label><button class="btn" id="btnManual" type="button">计算</button></div>
+      </div>
+      <div id="manualOut" style="margin-top:12px"></div>
+    </section>
+
+    <footer class="footer">
+      US Options Lab · 静态前端 · 数据优先 Yahoo Finance 公开接口 · 模型自研 BS/IV · 个人学习工具
+    </footer>
+  </div>
+</body>
+</html>
