@@ -4,9 +4,11 @@
 
 ## 在线地址
 
-- **GitHub Pages（长期）**: https://fanyuqi512-droid.github.io/us-options-lab/
-- Flypod（约 14 天）: https://ca542aefb6074898.flypod.page
-- ShipStatic（约 3 天，可 claim）: https://pure-synth-xz7g5k6.shipstatic.com
+- **主站 GitHub Pages**: https://fanyuqi512-droid.github.io/us-options-lab/
+- 备用 Flypod（约 14 天）: https://ca542aefb6074898.flypod.page
+- 备用 ShipStatic（约 3 天）: https://pure-synth-xz7g5k6.shipstatic.com
+
+> Surge (`us-options-lab.surge.sh`) 因账号为一次性邮箱被拒绝发布；已改用 GitHub Pages。
 
 仓库：https://github.com/fanyuqi512-droid/us-options-lab
 
